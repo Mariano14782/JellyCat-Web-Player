@@ -107,6 +107,10 @@ export function CurrentlyOnPage() {
 export function ChangelogPage() {
   return (
     <TrustShell title="CHANGELOG">
+      <Section title="1.3.0" />
+      <p>- Redesigned the queue view with larger artwork, drag-and-drop reordering, improved actions, and inline removal controls.</p>
+      <p>- Added persistent volume settings, mini-player volume controls, animated volume panels, and keyboard shortcuts for playback and volume.</p>
+      <p>- Added monthly play counts and a weekly top 20 Smart Mix based on local playback history.</p>
       <Section title="1.1.0" />
       <p>- Added a playback status indicator in the player UI.</p>
       <p>- Fixed a bug where progress bar on the mini player didn´t change the song timestamp.</p>

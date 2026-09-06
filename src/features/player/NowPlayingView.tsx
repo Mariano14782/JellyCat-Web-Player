@@ -4,6 +4,7 @@ import { useAppStore } from "@app/appStore";
 import { formatDuration } from "@domain/types";
 import { usePlayerStore } from "@core/player/audioService";
 import { jellyfinClient } from "@core/jellyfin";
+import { preferenceStorage } from "@core/storage/storage";
 import { useLyricsStore } from "@core/player/lyricsService";
 import { Artwork, Divider, IconButton, JButton, PrimaryTabBar, ProgressBlocks, Ticker, icons } from "@shared/ui";
 
@@ -22,6 +23,7 @@ export function NowPlayingView() {
   const immersive = useAppStore((state) => state.immersivePlayerBackground);
   const lyrics = useLyricsStore();
   const track = player.currentTrack;
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const [showLyrics, setShowLyrics] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
@@ -78,7 +80,7 @@ export function NowPlayingView() {
                 active={showVolume}
                 onClick={() => setShowVolume((value) => !value)}
               />
-              {showVolume ? (
+              <div className="volume-popover" aria-hidden={!showVolume}>
                 <input
                   aria-label="Volume"
                   className="volume-slider"
@@ -88,8 +90,9 @@ export function NowPlayingView() {
                   step="0.01"
                   value={player.volume}
                   onChange={(event) => player.setVolume(Number(event.target.value))}
+                  tabIndex={showVolume ? 0 : -1}
                 />
-              ) : null}
+              </div>
             </div>
             <IconButton label="Queue" icon={icons.queue} onClick={() => exitTo("/queue")} />
           </div>
@@ -110,11 +113,11 @@ export function NowPlayingView() {
               </section>
               <section className="metadata-log">
                 <div>■ TRACK: {track.title}</div>
-                <div>□ ARTIST: <button type="button" onClick={() => void openArtist()}>{track.artistName}</button></div>
-                <div>■ ALBUM: <Link to={`/library/albums/${encodeURIComponent(track.albumId)}`}>{track.albumName}</Link></div>
+                <div>□ ARTIST: <button type="button" onClick={() => void openArtist()}>{track.artistName}<icons.externalLink aria-hidden="true" className="metadata-link-icon" /></button></div>
+                <div>■ ALBUM: <Link to={`/library/albums/${encodeURIComponent(track.albumId)}`}>{track.albumName}<icons.externalLink aria-hidden="true" className="metadata-link-icon" /></Link></div>
                 <div>□ FORMAT: {track.container ?? "AUDIO"}</div>
                 {track.bitrate ? <div>■ BITRATE: {track.bitrate} KBPS</div> : null}
-                {track.playCount !== undefined ? <div>□ PLAYS: {track.playCount}</div> : null}
+                <div>□ MONTH PLAYS: {preferenceStorage.countPlays(track.id, monthStart)}</div>
               </section>
             </div>
           )}

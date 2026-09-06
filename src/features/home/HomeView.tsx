@@ -149,7 +149,7 @@ export function HomeView() {
             disabled={!connection.isServerAvailable || (mix.id === "artist-radio" && !player.currentTrack?.artistId)}
             onClick={() => void playSmartMix(mix.id)}
           >
-            {mix.id === "recently-added" ? <icons.play size={18} /> : <icons.shuffle size={18} />}
+            {mix.id === "recently-added" || mix.id === "weekly-most-played" ? <icons.play size={18} /> : <icons.shuffle size={18} />}
             <strong>{mix.title}</strong>
             <span>{mix.id === "artist-radio" && !player.currentTrack?.artistId ? "Start a track first" : mix.description}</span>
           </button>

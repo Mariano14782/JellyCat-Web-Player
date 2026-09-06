@@ -55,6 +55,20 @@ describe("preferenceStorage", () => {
     expect(localStorage.getItem(storageKeys.localJellyfinLyrics)).toBe("false");
     expect(preferenceStorage.loadLocalJellyfinLyrics()).toBe(false);
   });
+
+  it("persists player volume and clamps invalid values", () => {
+    expect(preferenceStorage.loadPlayerVolume()).toBe(1);
+
+    preferenceStorage.savePlayerVolume(0.42);
+    expect(localStorage.getItem(storageKeys.playerVolume)).toBe("0.42");
+    expect(preferenceStorage.loadPlayerVolume()).toBe(0.42);
+
+    preferenceStorage.savePlayerVolume(2);
+    expect(preferenceStorage.loadPlayerVolume()).toBe(1);
+
+    localStorage.setItem(storageKeys.playerVolume, JSON.stringify("loud"));
+    expect(preferenceStorage.loadPlayerVolume()).toBe(1);
+  });
 });
 
 describe("profileStorage", () => {

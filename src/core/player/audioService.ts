@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { PlaybackStatus, QueueSnapshot, RepeatMode, Track } from "@domain/types";
 import { ticksToSeconds } from "@domain/types";
 import { jellyfinClient } from "@core/jellyfin";
-import { queueSnapshotStorage, recentTrackStorage } from "@core/storage/storage";
+import { preferenceStorage, queueSnapshotStorage, recentTrackStorage } from "@core/storage/storage";
 import { useLyricsStore } from "./lyricsService";
 
 interface PlayerState {
@@ -42,6 +42,7 @@ interface PlayerStore extends PlayerState {
 }
 
 const storedQueueSnapshots = queueSnapshotStorage.load();
+const storedPlayerVolume = preferenceStorage.loadPlayerVolume();
 
 const initialPlayerState: PlayerState = {
   queue: [],
@@ -52,7 +53,7 @@ const initialPlayerState: PlayerState = {
   repeatMode: "none",
   currentTimeSeconds: 0,
   durationSeconds: 0,
-  volume: 1,
+  volume: storedPlayerVolume,
   playbackStatus: "idle",
   playbackError: undefined,
   lastQueueSnapshot: storedQueueSnapshots.last,
@@ -89,6 +90,7 @@ class BrowserAudioService {
 
   constructor() {
     this.audio.preload = "auto";
+    this.audio.volume = storedPlayerVolume;
     this.audio.addEventListener("loadstart", () => this.setPlaybackStatus("loading"));
     this.audio.addEventListener("waiting", () => this.setPlaybackStatus("buffering"));
     this.audio.addEventListener("stalled", () => this.setPlaybackStatus("buffering"));
@@ -193,6 +195,7 @@ class BrowserAudioService {
   setVolume(volume: number): void {
     const next = Math.max(0, Math.min(1, volume));
     this.audio.volume = next;
+    preferenceStorage.savePlayerVolume(next);
     usePlayerStore.setState({ volume: next });
   }
 
@@ -372,6 +375,7 @@ class BrowserAudioService {
     this.preloadNext();
     this.updateMediaSession();
     void jellyfinClient.reportPlaybackStarted(track.id);
+    preferenceStorage.recordPlay(track.id);
     recentTrackStorage.record(track);
     void useLyricsStore.getState().fetchLyrics(track);
   }

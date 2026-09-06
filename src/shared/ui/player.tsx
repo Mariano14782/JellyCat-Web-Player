@@ -53,6 +53,7 @@ export function Ticker({ track }: { track?: Track | null }) {
 export function MiniPlayer() {
   const player = usePlayerStore();
   const track = player.currentTrack;
+  const [showVolume, setShowVolume] = useState(false);
   const progress = player.durationSeconds > 0 ? player.currentTimeSeconds / player.durationSeconds : 0;
 
   const toggleFavorite = async () => {
@@ -87,6 +88,27 @@ export function MiniPlayer() {
               <IconButton label={player.isPlaying ? "Pause" : "Play"} icon={player.isPlaying ? icons.pause : icons.play} onClick={player.togglePlayPause} />
               <IconButton label="Next" icon={icons.skip} onClick={player.nextTrack} />
               <IconButton label={track.isFavorite ? "Unfavorite" : "Favorite"} icon={icons.heart} active={track.isFavorite} onClick={() => void toggleFavorite()} />
+              <div className={`mini-volume-control ${showVolume ? "open" : ""}`}>
+                <IconButton
+                  label="Volume"
+                  icon={player.volume === 0 ? icons.volumeOff : icons.volume}
+                  active={showVolume}
+                  onClick={() => setShowVolume((value) => !value)}
+                />
+                <div className="mini-volume-popover" aria-hidden={!showVolume}>
+                  <input
+                    aria-label="Volume"
+                    className="volume-slider"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={player.volume}
+                    onChange={(event) => player.setVolume(Number(event.target.value))}
+                    tabIndex={showVolume ? 0 : -1}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

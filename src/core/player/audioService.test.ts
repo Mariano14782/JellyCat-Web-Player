@@ -23,6 +23,7 @@ class FakeAudio {
   paused = true;
   src = "";
   preload = "";
+  volume = 1;
   currentTime = 0;
   duration = 12;
   listeners = new Map<string, FakeListener[]>();
@@ -126,6 +127,25 @@ describe("audio service playback startup", () => {
       isPlaying: false,
       playbackStatus: "loading"
     });
+  });
+
+  it("restores saved volume when the audio service starts", async () => {
+    localStorage.setItem("jellycat:web:playerVolume", JSON.stringify(0.35));
+
+    const { audioInstances, usePlayerStore } = await setupAudioService();
+
+    expect(usePlayerStore.getState().volume).toBe(0.35);
+    expect(audioInstances[0].volume).toBe(0.35);
+  });
+
+  it("persists volume changes", async () => {
+    const { audioInstances, usePlayerStore } = await setupAudioService();
+
+    usePlayerStore.getState().setVolume(0.25);
+
+    expect(usePlayerStore.getState().volume).toBe(0.25);
+    expect(audioInstances[0].volume).toBe(0.25);
+    expect(localStorage.getItem("jellycat:web:playerVolume")).toBe("0.25");
   });
 
   it("tracks playing, buffering, error, and idle media states", async () => {

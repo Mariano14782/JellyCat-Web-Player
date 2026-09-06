@@ -1,4 +1,4 @@
-import type { AppTheme, AuthSession, QueueSnapshot, RecentItem, SavedProfile, Track } from "@domain/types";
+import type { AppTheme, AuthSession, PlayEvent, QueueSnapshot, RecentItem, SavedProfile, Track } from "@domain/types";
 
 const prefix = "jellycat:web:";
 
@@ -13,7 +13,9 @@ export const storageKeys = {
   profilePersistentTokens: `${prefix}profiles:persistentTokens`,
   profileSessionTokens: `${prefix}profiles:sessionTokens`,
   queueSnapshots: `${prefix}queueSnapshots`,
-  recentTracks: `${prefix}recentTracks`
+  recentTracks: `${prefix}recentTracks`,
+  playerVolume: `${prefix}playerVolume`,
+  playEvents: `${prefix}playEvents`
 };
 
 const sessionStorageKey = `${storageKeys.session}:session`;
@@ -252,6 +254,24 @@ export const preferenceStorage = {
   },
   saveRecentActivity(items: RecentItem[]): void {
     saveJson(storageKeys.recentActivity, items);
+  },
+  loadPlayerVolume(): number {
+    const volume = loadJson<number>(storageKeys.playerVolume, 1);
+    return Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 1;
+  },
+  savePlayerVolume(volume: number): void {
+    saveJson(storageKeys.playerVolume, Math.max(0, Math.min(1, volume)));
+  },
+  loadPlayEvents(): PlayEvent[] {
+    return loadJson<PlayEvent[]>(storageKeys.playEvents, []).filter((event) => event.trackId && Number.isFinite(Date.parse(event.playedAt)));
+  },
+  recordPlay(trackId: string, playedAt = new Date().toISOString()): void {
+    const cutoff = Date.now() - 8 * 24 * 60 * 60 * 1000;
+    const events = this.loadPlayEvents().filter((event) => Date.parse(event.playedAt) >= cutoff);
+    saveJson(storageKeys.playEvents, [...events, { trackId, playedAt }]);
+  },
+  countPlays(trackId: string, from: Date, to = new Date()): number {
+    return this.loadPlayEvents().filter((event) => event.trackId === trackId && Date.parse(event.playedAt) >= from.getTime() && Date.parse(event.playedAt) <= to.getTime()).length;
   }
 };
 
@@ -260,6 +280,8 @@ export function clearAppCache(): void {
   localStorage.removeItem(storageKeys.recentActivity);
   localStorage.removeItem(storageKeys.queueSnapshots);
   localStorage.removeItem(storageKeys.recentTracks);
+  localStorage.removeItem(storageKeys.playerVolume);
+  localStorage.removeItem(storageKeys.playEvents);
   localStorage.removeItem("jellycat:songs:limitMode");
   localStorage.removeItem("jellycat:songs:sort");
   localStorage.removeItem("jellycat:playlist:sort");

@@ -78,6 +78,9 @@ function RoutedApp() {
   const checkConnection = useAppStore((state) => state.checkConnection);
   const checkForUpdate = useAppStore((state) => state.checkForUpdate);
   const currentTrack = usePlayerStore((state) => state.currentTrack);
+  const volume = usePlayerStore((state) => state.volume);
+  const togglePlayPause = usePlayerStore((state) => state.togglePlayPause);
+  const setVolume = usePlayerStore((state) => state.setVolume);
   const location = useLocation();
 
   useEffect(() => {
@@ -95,6 +98,26 @@ function RoutedApp() {
     const id = window.setInterval(() => void checkForUpdate(), 30 * 60_000);
     return () => window.clearInterval(id);
   }, [checkForUpdate]);
+
+  useEffect(() => {
+    const handleKeyboardShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || target?.tagName === "INPUT" || target?.tagName === "SELECT" || target?.tagName === "TEXTAREA") return;
+
+      if (event.code === "Space") {
+        if (!currentTrack) return;
+        event.preventDefault();
+        void togglePlayPause();
+      } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        if (!currentTrack) return;
+        event.preventDefault();
+        setVolume(volume + (event.key === "ArrowUp" ? 0.05 : -0.05));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyboardShortcut);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcut);
+  }, [currentTrack, setVolume, togglePlayPause, volume]);
 
   const isFullscreenRoute = location.pathname === "/queue" || location.pathname === "/now-playing";
   const pageTransitionClass = isFullscreenRoute ? "route-transition fullscreen-route-transition" : "route-transition";

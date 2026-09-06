@@ -1,5 +1,6 @@
 import type { SmartMixDefinition, SmartMixId, SmartMixResult, Track } from "@domain/types";
 import { jellyfinClient } from "@core/jellyfin";
+import { preferenceStorage } from "@core/storage/storage";
 
 const pageSize = 500;
 const shuffleCandidateCap = 500;
@@ -10,7 +11,8 @@ export const smartMixDefinitions: SmartMixDefinition[] = [
   { id: "favorites", title: "FAVORITES MIX", description: "Shuffle your favorite tracks." },
   { id: "recently-added", title: "RECENTLY ADDED", description: "Newest tracks in your library." },
   { id: "unplayed", title: "UNPLAYED", description: "Tracks with no Jellyfin plays yet." },
-  { id: "artist-radio", title: "ARTIST RADIO", description: "Shuffle more from the current artist." }
+  { id: "artist-radio", title: "ARTIST RADIO", description: "Shuffle more from the current artist." },
+  { id: "weekly-most-played", title: "WEEKLY TOP 20", description: "Your 20 most played tracks this week." }
 ];
 
 function shuffleTracks(tracks: Track[]): Track[] {
@@ -64,6 +66,17 @@ async function artistRadioMix(artistId?: string): Promise<Track[]> {
   return shuffleTracks((await jellyfinClient.getArtistTracks(artistId)).slice(0, shuffleCandidateCap));
 }
 
+async function weeklyMostPlayedMix(): Promise<Track[]> {
+  const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const counts = new Map(preferenceStorage.loadPlayEvents().filter((event) => Date.parse(event.playedAt) >= weekStart.getTime()).map((event) => [event.trackId, 0]));
+  for (const event of preferenceStorage.loadPlayEvents()) {
+    if (Date.parse(event.playedAt) >= weekStart.getTime()) counts.set(event.trackId, (counts.get(event.trackId) ?? 0) + 1);
+  }
+  if (!counts.size) return [];
+  const tracks = (await jellyfinClient.getAllTracks("SortName", "Ascending")).filter((track) => counts.has(track.id));
+  return tracks.sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0)).slice(0, 20);
+}
+
 export async function buildSmartMix(id: SmartMixId, options: { artistId?: string } = {}): Promise<SmartMixResult> {
   const tracks = id === "favorites"
     ? await favoriteMix()
@@ -71,7 +84,9 @@ export async function buildSmartMix(id: SmartMixId, options: { artistId?: string
       ? await recentlyAddedMix()
       : id === "unplayed"
         ? await unplayedMix()
-        : await artistRadioMix(options.artistId);
+        : id === "artist-radio"
+          ? await artistRadioMix(options.artistId)
+          : await weeklyMostPlayedMix();
 
   return {
     definition: definitionFor(id),
