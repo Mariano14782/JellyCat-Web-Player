@@ -107,6 +107,8 @@ export function CurrentlyOnPage() {
 export function ChangelogPage() {
   return (
     <TrustShell title="CHANGELOG">
+      <Section title="1.3.1" />
+      <p>- Fixed playback stopping when opening an artist or album from search results.</p>
       <Section title="1.3.0" />
       <p>- Redesigned the queue view with larger artwork, drag-and-drop reordering, improved actions, and inline removal controls.</p>
       <p>- Added persistent volume settings, mini-player volume controls, animated volume panels, and keyboard shortcuts for playback and volume.</p>

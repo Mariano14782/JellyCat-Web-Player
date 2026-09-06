@@ -172,7 +172,7 @@ function SearchResultsView({ results, onCommitSearch }: { results: SearchResults
 
   return (
     <>
-      <div onClickCapture={onCommitSearch}>
+      <div onClickCapture={() => onCommitSearch()}>
         {results.artists.length ? (
           <>
             <Section title="ARTISTS" action={`// ${results.artists.length}`} />
